@@ -1,5 +1,5 @@
 // =============================
-// CONFIG BACKEND (EDITAR)
+// CONFIG BACKEND
 // =============================
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxEBgoFWkwI371OY-JOXKcwxrq1iQY6-RhB4df5D67ZweZ6_KRdExl1JxgJ6keojIU3/exec";
 const APP_TOKEN   = "M@rio";
@@ -13,7 +13,7 @@ function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
 function renumerarTabla(tableId){
   const tbody = qs(`#${tableId} tbody`);
   Array.from(tbody.rows).forEach((row, idx) => {
-    row.cells[0].textContent = String(idx + 1);
+    row.cells[0].textContent = idx + 1;
   });
 }
 
@@ -22,11 +22,10 @@ function crearBtnEliminar(tableId){
   btn.type = "button";
   btn.className = "btn btn--secondary";
   btn.textContent = "Eliminar";
-  btn.addEventListener("click", (e) => {
-    const row = e.target.closest("tr");
-    row.remove();
+  btn.onclick = e => {
+    e.target.closest("tr").remove();
     renumerarTabla(tableId);
-  });
+  };
   return btn;
 }
 
@@ -34,186 +33,192 @@ function crearBtnEliminar(tableId){
 // Lógica condicional
 // =============================
 function toggleBloqueResolucion(){
-  const tipo = qs("#tipo_actuacion").value;
-  const bloque = qs("#bloque_resolucion");
-  bloque.style.display = (tipo === "SA") ? "grid" : "none";
+  qs("#bloque_resolucion").style.display =
+    qs("#tipo_actuacion").value === "SA" ? "grid" : "none";
 }
 
 function toggleActJudicial(){
-  const chk = qs("#act_judicial").checked;
-  const fecha = qs("#fecha_act_judicial");
-  fecha.disabled = !chk;
-  if(!chk) fecha.value = "";
+  qs("#fecha_act_judicial").disabled = !qs("#act_judicial").checked;
 }
 
 function toggleCalificacionEvento(){
-  const chk = qs("#calificacion_evento").checked;
-  const nro = qs("#nro_ex_evento");
-  const fecha = qs("#fecha_evento");
-  nro.disabled = !chk;
-  fecha.disabled = !chk;
-  if(!chk){
-    nro.value = "";
-    fecha.value = "";
-  }
+  const ok = qs("#calificacion_evento").checked;
+  qs("#fecha_evento").disabled = !ok;
+  qs("#nro_ex_evento").disabled = !ok;
 }
 
 // =============================
-// Backend calls
+// API PERSONAL (PHP)
 // =============================
-
-// 🔴 LP SE BUSCA DIRECTO EN TU PHP (NO Apps Script)
 function apiBuscarLP(lp){
   const url = `https://sofw.link/buscar_personal.php?token=M@rio&legajo=${encodeURIComponent(lp)}`;
-  return fetch(url)
-    .then(r => r.json())
-    .then(arr => {
-      if (!Array.isArray(arr) || arr.length === 0) {
-        return { ok: false };
-      }
-      const r0 = arr[0];
-      return {
-        ok: true,
-        lp: r0.Legajo,
-        grado: r0.Grado,
-        apellido: r0.Apellido,
-        nombre: r0.Nombres,
-        dni: r0.DNI
-      };
-    });
-}
-
-function apiBuscarExpediente(nroEx){
-  const url = `${BACKEND_URL}?accion=buscarExpediente&token=${encodeURIComponent(APP_TOKEN)}&nro_ex=${encodeURIComponent(nroEx)}`;
   return fetch(url).then(r => r.json());
 }
 
-function apiGuardarExpediente(payload){
-  return fetch(BACKEND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      accion: "guardarExpediente",
-      token: APP_TOKEN,
-      payload
-    })
-  }).then(r => r.json());
-}
-
 // =============================
-// Imputados (LP)
+// IMPUTADOS
 // =============================
 function agregarImputado(){
   const lp = qs("#lp_input").value.trim();
-  if(!lp){
-    alert("Ingrese un LP.");
-    return;
-  }
+  if(!lp) return alert("Ingrese LP");
 
   const tbody = qs("#tabla_imputados tbody");
   const tr = document.createElement("tr");
 
-  const tdN = document.createElement("td");
-  tdN.textContent = String(tbody.rows.length + 1);
+  tr.innerHTML = `
+    <td>${tbody.rows.length + 1}</td>
+    <td>${lp}</td>
+    <td>Buscando...</td>
+    <td><input class="input" placeholder="Destino"></td>
+    <td><input class="input" placeholder="Situación de revista"></td>
+    <td></td>
+  `;
 
-  const tdLP = document.createElement("td");
-  tdLP.textContent = lp;
-
-  const tdDatos = document.createElement("td");
-  tdDatos.textContent = "Buscando datos...";
-
-  const tdDestino = document.createElement("td");
-  tdDestino.innerHTML = `<input class="input" type="text" placeholder="Destino">`;
-
-  const tdSituacion = document.createElement("td");
-  tdSituacion.innerHTML = `<input class="input" type="text" placeholder="Situación de revista">`;
-
-  const tdAcc = document.createElement("td");
-  tdAcc.appendChild(crearBtnEliminar("tabla_imputados"));
-
-  tr.dataset.lp = lp;
-
-  tr.append(tdN, tdLP, tdDatos, tdDestino, tdSituacion, tdAcc);
+  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_imputados"));
   tbody.appendChild(tr);
 
   apiBuscarLP(lp)
-    .then(data => {
-      if(data && data.ok){
-        tr.dataset.grado = data.grado || "";
-        tr.dataset.apellido = data.apellido || "";
-        tr.dataset.nombre = data.nombre || "";
-        tr.dataset.dni = data.dni || "";
-
-        tdDatos.textContent =
-          `${data.grado} LP ${data.lp} (DNI ${data.dni}) ${data.apellido} ${data.nombre}`;
-      } else {
-        tdDatos.textContent = "LP no encontrado";
+    .then(r => {
+      if(!Array.isArray(r) || !r.length){
+        tr.cells[2].textContent = "LP no encontrado";
+        return;
       }
+      const p = r[0];
+      tr.cells[2].textContent =
+        `${p.Grado} LP ${p.Legajo} (DNI ${p.DNI}) ${p.Apellido} ${p.Nombres}`;
     })
-    .catch(() => {
-      tdDatos.textContent = "Error al consultar la base";
-    });
+    .catch(()=> tr.cells[2].textContent="Error al consultar");
 
-  qs("#lp_input").value = "";
+  qs("#lp_input").value="";
 }
 
 // =============================
-// Damnificados (manual)
+// DAMNIFICADOS
 // =============================
-function agregarDamnificadoConValores(d = {}){
+function agregarDamnificado(){
   const tbody = qs("#tabla_damnificados tbody");
   const tr = document.createElement("tr");
 
-  const tdN = document.createElement("td");
-  tdN.textContent = String(tbody.rows.length + 1);
-
-  const tdDatos = document.createElement("td");
-  tdDatos.innerHTML = `<input class="input" type="text" placeholder="Apellido y Nombre / Datos" value="${escapeAttr(d.datos || "")}">`;
-
-  const tdRel = document.createElement("td");
-  tdRel.innerHTML = `<input class="input" type="text" placeholder="Relación" value="${escapeAttr(d.relacion || "")}">`;
-
-  const tdDni = document.createElement("td");
-  tdDni.innerHTML = `<input class="input" type="text" placeholder="DNI" value="${escapeAttr(d.dni || "")}">`;
-
-  const tdAcc = document.createElement("td");
-  tdAcc.appendChild(crearBtnEliminar("tabla_damnificados"));
-
-  tr.append(tdN, tdDatos, tdRel, tdDni, tdAcc);
+  tr.innerHTML = `
+    <td>${tbody.rows.length + 1}</td>
+    <td><input class="input"></td>
+    <td><input class="input"></td>
+    <td><input class="input"></td>
+    <td></td>
+  `;
+  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_damnificados"));
   tbody.appendChild(tr);
 }
 
-function agregarDamnificado(){
-  agregarDamnificadoConValores({});
+// =============================
+// DILIGENCIAS
+// =============================
+function agregarDiligencia(){
+  const tbody = qs("#tabla_diligencias tbody");
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${tbody.rows.length + 1}</td>
+    <td><input class="input"></td>
+    <td><input class="input"></td>
+    <td><input class="input" type="date"></td>
+    <td><input class="input" type="date"></td>
+    <td><input class="input"></td>
+    <td></td>
+  `;
+  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_diligencias"));
+  tbody.appendChild(tr);
 }
 
 // =============================
-// Utils
+// PROCURACIÓN
 // =============================
-function escapeAttr(str){
-  return String(str ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
+function agregarProcuracion(){
+  const tbody = qs("#tabla_procuracion tbody");
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${tbody.rows.length + 1}</td>
+    <td><input class="input"></td>
+    <td><input class="input" type="date"></td>
+    <td><input class="input"></td>
+    <td><input class="input" type="date"></td>
+    <td><input class="input"></td>
+    <td></td>
+  `;
+  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_procuracion"));
+  tbody.appendChild(tr);
 }
 
 // =============================
-// Init
+// GUARDAR
 // =============================
-document.addEventListener("DOMContentLoaded", () => {
+function onGuardar(){
+  const payload = {
+    nro_ex: qs("#nro_ex").value,
+    tipo: qs("#tipo_actuacion").value,
+    nro_actuacion: qs("#nro_actuacion").value,
+    articulacion: qs("#articulacion").value,
+    tematica: qs("#tematica").value,
+    fecha_hecho: qs("#fecha_hecho").value,
+    circunstancia: qs("#circunstancia").value,
+    resena: qs("#resena").value,
+    imputados: qsa("#tabla_imputados tbody tr").map(tr=>({
+      lp: tr.cells[1].textContent,
+      datos: tr.cells[2].textContent,
+      destino: tr.cells[3].querySelector("input").value,
+      situacion: tr.cells[4].querySelector("input").value
+    }))
+  };
+
+  fetch(BACKEND_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({accion:"guardarExpediente",token:APP_TOKEN,payload})
+  })
+  .then(r=>r.json())
+  .then(()=>alert("Datos guardados"))
+  .catch(()=>alert("Error al guardar"));
+}
+
+// =============================
+// BUSCAR
+// =============================
+function onBuscar(){
+  const ex = qs("#nro_ex").value;
+  fetch(`${BACKEND_URL}?accion=buscarExpediente&token=${APP_TOKEN}&nro_ex=${ex}`)
+    .then(r=>r.json())
+    .then(d=>{
+      if(!d.ok) return alert("No encontrado");
+      qs("#nro_actuacion").value = d.nro_actuacion;
+      qs("#resena").value = d.resena;
+    });
+}
+
+// =============================
+// IMPRIMIR
+// =============================
+function onImprimir(){
+  window.print();
+}
+
+// =============================
+// INIT
+// =============================
+document.addEventListener("DOMContentLoaded",()=>{
   toggleBloqueResolucion();
   toggleActJudicial();
   toggleCalificacionEvento();
 
-  qs("#tipo_actuacion").addEventListener("change", toggleBloqueResolucion);
-  qs("#act_judicial").addEventListener("change", toggleActJudicial);
-  qs("#calificacion_evento").addEventListener("change", toggleCalificacionEvento);
+  qs("#tipo_actuacion").onchange = toggleBloqueResolucion;
+  qs("#act_judicial").onchange = toggleActJudicial;
+  qs("#calificacion_evento").onchange = toggleCalificacionEvento;
 
-  qs("#btnAgregarImputado").addEventListener("click", agregarImputado);
-  qs("#btnAgregarDamnificado").addEventListener("click", agregarDamnificado);
+  qs("#btnAgregarImputado").onclick = agregarImputado;
+  qs("#btnAgregarDamnificado").onclick = agregarDamnificado;
+  qs("#btnAgregarDiligencia").onclick = agregarDiligencia;
+  qs("#btnAgregarProcuracion").onclick = agregarProcuracion;
 
-  qs("#btnGuardar").addEventListener("click", onGuardar);
-  qs("#btnBuscar").addEventListener("click", onBuscar);
-  qs("#btnImprimir").addEventListener("click", onImprimir);
+  qs("#btnGuardar").onclick = onGuardar;
+  qs("#btnBuscar").onclick = onBuscar;
+  qs("#btnImprimir").onclick = onImprimir;
 });
+

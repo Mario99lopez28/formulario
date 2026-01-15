@@ -1,7 +1,7 @@
 // =============================
 // CONFIG BACKEND
 // =============================
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxEBgoFWkwI371OY-JOXKcwxrq1iQY6-RhB4df5D67ZweZ6_KRdExl1JxgJ6keojIU3/exec";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxlqrV2_07W6CdIFYdxYENBRi1WJCVDVKRYT7Qf6b5oanpdit3UFqRXWBHnYEoros4LSA/exec";
 const APP_TOKEN   = "M@rio";
 
 // =============================
@@ -232,3 +232,4 @@ document.addEventListener("DOMContentLoaded",()=>{
   qs("#btnBuscar").onclick = onBuscar;
   qs("#btnImprimir").onclick = onImprimir;
 });
+

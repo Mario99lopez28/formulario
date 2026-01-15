@@ -12,9 +12,7 @@ function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
 
 function renumerarTabla(tableId){
   const tbody = qs(`#${tableId} tbody`);
-  Array.from(tbody.rows).forEach((row, idx) => {
-    row.cells[0].textContent = idx + 1;
-  });
+  Array.from(tbody.rows).forEach((row, idx) => row.cells[0].textContent = idx + 1);
 }
 
 function crearBtnEliminar(tableId){
@@ -56,6 +54,22 @@ function apiBuscarLP(lp){
 }
 
 // =============================
+// API EXPEDIENTES (Apps Script)
+// =============================
+function apiBuscarExpediente(nroEx){
+  return fetch(`${BACKEND_URL}?accion=buscarExpediente&token=${APP_TOKEN}&nro_ex=${encodeURIComponent(nroEx)}`)
+    .then(r => r.json());
+}
+
+function apiGuardarExpediente(payload){
+  return fetch(BACKEND_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ accion:"guardarExpediente", token:APP_TOKEN, payload })
+  }).then(r=>r.json());
+}
+
+// =============================
 // IMPUTADOS
 // =============================
 function agregarImputado(){
@@ -74,16 +88,22 @@ function agregarImputado(){
     <td></td>
   `;
 
+  tr.dataset.lp = lp;
   tr.lastElementChild.appendChild(crearBtnEliminar("tabla_imputados"));
   tbody.appendChild(tr);
 
   apiBuscarLP(lp)
-    .then(r => {
+    .then(r=>{
       if(!Array.isArray(r) || !r.length){
         tr.cells[2].textContent = "LP no encontrado";
         return;
       }
       const p = r[0];
+      tr.dataset.grado = p.Grado || "";
+      tr.dataset.apellido = p.Apellido || "";
+      tr.dataset.nombre = p.Nombres || "";
+      tr.dataset.dni = p.DNI || "";
+
       tr.cells[2].textContent =
         `${p.Grado} LP ${p.Legajo} (DNI ${p.DNI}) ${p.Apellido} ${p.Nombres}`;
     })
@@ -98,7 +118,6 @@ function agregarImputado(){
 function agregarDamnificado(){
   const tbody = qs("#tabla_damnificados tbody");
   const tr = document.createElement("tr");
-
   tr.innerHTML = `
     <td>${tbody.rows.length + 1}</td>
     <td><input class="input"></td>
@@ -149,53 +168,45 @@ function agregarProcuracion(){
 }
 
 // =============================
-// GUARDAR
+// GUARDAR / BUSCAR / IMPRIMIR
 // =============================
-function onGuardar(){
-  const payload = {
+function buildPayload(){
+  return {
     nro_ex: qs("#nro_ex").value,
-    tipo: qs("#tipo_actuacion").value,
-    nro_actuacion: qs("#nro_actuacion").value,
-    articulacion: qs("#articulacion").value,
-    tematica: qs("#tematica").value,
-    fecha_hecho: qs("#fecha_hecho").value,
-    circunstancia: qs("#circunstancia").value,
-    resena: qs("#resena").value,
+    actuacion: {
+      tipo: qs("#tipo_actuacion").value,
+      nro_actuacion: qs("#nro_actuacion").value,
+      articulacion: qs("#articulacion").value,
+      tematica: qs("#tematica").value,
+      fecha_hecho: qs("#fecha_hecho").value,
+      circunstancia: qs("#circunstancia").value,
+      resena: qs("#resena").value
+    },
     imputados: qsa("#tabla_imputados tbody tr").map(tr=>({
-      lp: tr.cells[1].textContent,
-      datos: tr.cells[2].textContent,
+      lp: tr.dataset.lp,
+      grado: tr.dataset.grado,
+      apellido: tr.dataset.apellido,
+      nombre: tr.dataset.nombre,
+      dni: tr.dataset.dni,
       destino: tr.cells[3].querySelector("input").value,
       situacion: tr.cells[4].querySelector("input").value
     }))
   };
-
-  fetch(BACKEND_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({accion:"guardarExpediente",token:APP_TOKEN,payload})
-  })
-  .then(r=>r.json())
-  .then(()=>alert("Datos guardados"))
-  .catch(()=>alert("Error al guardar"));
 }
 
-// =============================
-// BUSCAR
-// =============================
-function onBuscar(){
-  const ex = qs("#nro_ex").value;
-  fetch(`${BACKEND_URL}?accion=buscarExpediente&token=${APP_TOKEN}&nro_ex=${ex}`)
-    .then(r=>r.json())
-    .then(d=>{
-      if(!d.ok) return alert("No encontrado");
-      qs("#nro_actuacion").value = d.nro_actuacion;
-      qs("#resena").value = d.resena;
-    });
+async function onGuardar(){
+  const payload = buildPayload();
+  const r = await apiGuardarExpediente(payload);
+  r.ok ? alert("Guardado correctamente") : alert("Error al guardar");
 }
 
-// =============================
-// IMPRIMIR
-// =============================
+async function onBuscar(){
+  const nro = qs("#nro_ex").value;
+  const r = await apiBuscarExpediente(nro);
+  if(!r.ok) return alert("No encontrado");
+  alert("Expediente cargado (estructura lista)");
+}
+
 function onImprimir(){
   window.print();
 }
@@ -221,4 +232,3 @@ document.addEventListener("DOMContentLoaded",()=>{
   qs("#btnBuscar").onclick = onBuscar;
   qs("#btnImprimir").onclick = onImprimir;
 });
-

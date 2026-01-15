@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Actuación</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="actuacion.css">
+
+  <!-- JS -->
+  <script src="actuacion.js" defer></script>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="topbar__left">
+    <div class="brand">
+      <div class="brand__title">Formulario de Actuación</div>
+      <div class="brand__subtitle">Carga / Consulta / Modificación</div>
+    </div>
+  </div>
+
+  <div class="topbar__right">
+    <div class="search">
+      <label class="label" for="nro_ex">N° EX</label>
+      <input class="input input--sm" id="nro_ex" type="text" placeholder="EX-2020..." autocomplete="off">
+      <button class="btn btn--secondary" type="button" id="btnBuscar">Buscar</button>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="button" id="btnGuardar">Guardar</button>
+      <button class="btn btn--secondary" type="button" id="btnImprimir">Imprimir</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ================= ACTUACIÓN ================= -->
+  <section class="card">
+    <header class="card__header">
+      <h2 class="card__title">Actuación</h2>
+    </header>
+
+    <div class="grid grid--4">
+      <div class="field">
+        <label class="label" for="tipo_actuacion">Tipo</label>
+        <select class="input" id="tipo_actuacion">
+          <option value="">Seleccione</option>
+          <option value="SA">S.A</option>
+          <option value="AP">A.P</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="nro_actuacion">Nro. Actuación</label>
+        <input class="input" id="nro_actuacion" type="text">
+      </div>
+
+      <div class="field">
+        <label class="label" for="articulacion">Articulación</label>
+        <input class="input" id="articulacion" type="text">
+      </div>
+
+      <div class="field">
+        <label class="label" for="tematica">Temática</label>
+        <input class="input" id="tematica" type="text">
+      </div>
+    </div>
+
+    <!-- Resolución (solo S.A) -->
+    <div class="grid grid--4" id="bloque_resolucion">
+      <div class="field">
+        <label class="label" for="resolucion">Resolución</label>
+        <input class="input" id="resolucion" type="text">
+      </div>
+
+      <div class="field">
+        <label class="label" for="fecha_resolucion">Fecha Resol.</label>
+        <input class="input" id="fecha_resolucion" type="date">
+      </div>
+
+      <div class="field field--span2">
+        <label class="label" for="nro_ex_interno">N° EX</label>
+        <input class="input" id="nro_ex_interno" type="text">
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HECHO ================= -->
+  <section class="card">
+    <header class="card__header">
+      <h2 class="card__title">Hecho</h2>
+    </header>
+
+    <div class="grid grid--4">
+      <div class="field">
+        <label class="label" for="fecha_hecho">Fecha del hecho</label>
+        <input class="input" id="fecha_hecho" type="date">
+      </div>
+
+      <div class="field">
+        <label class="label" for="circunstancia">Circunstancia</label>
+        <select class="input" id="circunstancia">
+          <option value="">Seleccione</option>
+          <option value="En Servicio">En Servicio</option>
+          <option value="Franco">Franco</option>
+          <option value="Franco">Itinere</option>
+        </select>
+      </div>
+
+      <div class="field field--span2">
+        <label class="label" for="resena">Reseña</label>
+        <textarea class="input textarea" id="resena" rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- BLOQUES CORREGIDOS -->
+    <div class="grid grid--4">
+
+      <!-- Actuación judicial -->
+      <div class="field field--span2">
+        <label class="check">
+          <input type="checkbox" id="act_judicial">
+          <span>Actuación judicial</span>
+        </label>
+
+        <label class="label" for="fecha_act_judicial">Fecha</label>
+        <input class="input" id="fecha_act_judicial" type="date" disabled>
+      </div>
+
+      <!-- Calificación de evento -->
+      <div class="field field--span2">
+        <label class="check">
+          <input type="checkbox" id="calificacion_evento">
+          <span>Calificación de evento</span>
+        </label>
+
+        <label class="label" for="fecha_evento">Fecha del evento</label>
+        <input class="input" id="fecha_evento" type="date" disabled>
+
+        <label class="label" for="nro_ex_evento">N° EX (evento)</label>
+        <input class="input" id="nro_ex_evento" type="text" disabled placeholder="EX-...">
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= IMPUTADOS ================= -->
+  <section class="card">
+    <header class="card__header card__header--split">
+      <h2 class="card__title">Imputados (por LP)</h2>
+      <div class="inline-tools">
+        <input class="input input--sm" id="lp_input" type="text" placeholder="LP">
+        <button class="btn btn--secondary" type="button" id="btnAgregarImputado">Agregar</button>
+      </div>
+    </header>
+
+    <div class="table-wrap">
+      <table class="table" id="tabla_imputados">
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>LP</th>
+            <th>Datos</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= DAMNIFICADOS ================= -->
+  <section class="card">
+    <header class="card__header card__header--split">
+      <h2 class="card__title">Damnificados</h2>
+      <button class="btn btn--secondary" type="button" id="btnAgregarDamnificado">Agregar</button>
+    </header>
+
+    <div class="table-wrap">
+      <table class="table" id="tabla_damnificados">
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Datos</th>
+            <th>Relación</th>
+            <th>DNI</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+  <!-- ================= DILIGENCIAS ================= -->
+  <section class="card">
+    <h2 class="card__title">Diligencias</h2>
+
+    <button class="btn btn--secondary" id="btnAgregarDiligencia">Agregar diligencia</button>
+
+    <table class="table" id="tabla_diligencias">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Diligencia</th>
+          <th>Tipo</th>
+          <th>Fecha solicitud</th>
+          <th>Fecha respuesta</th>
+          <th>Observación</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+  <!-- ================= PROCURACIÓN ================= -->
+  <section class="card">
+    <h2 class="card__title">Procuración</h2>
+
+    <button class="btn btn--secondary" id="btnAgregarProcuracion">Agregar procuración</button>
+
+    <table class="table" id="tabla_procuracion">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Procuración</th>
+          <th>Fecha solicitud</th>
+          <th>Repuesta</th>
+          <th>Fecha Rta</th>
+          <th>Observación</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+<!-- ================= BLOQUE IMPRESIÓN ================= -->
+<div class="bloque-firmas-print">
+  <div class="firma izquierda">
+    <div class="rol">SECRETARIO</div>
+    <div id="print_secretario"></div>
+  </div>
+
+  <div class="firma derecha">
+    <div class="rol">INSTRUCTOR</div>
+    <div id="print_instructor"></div>
+  </div>
+</div>
+
+
+</main>
+
+</body>
+</html>

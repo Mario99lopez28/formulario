@@ -1,0 +1,244 @@
+:root{
+  --azul:#1f4e79;
+  --azul-2:#163a5a;
+  --fondo:#f2f4f7;
+  --card:#ffffff;
+  --borde:#c7cbd1;
+  --texto:#111;
+  --muted:#5a6b7a;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background:var(--fondo);
+  color:var(--texto);
+}
+
+.topbar{
+  background:var(--azul);
+  color:#fff;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+
+.topbar__left{ display:flex; align-items:center; gap:10px; }
+.topbar__right{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+
+.brand__title{ font-size:16px; font-weight:700; }
+.brand__subtitle{ font-size:12px; opacity:.9; }
+
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:12px;
+}
+
+.search{
+  display:flex;
+  gap:8px;
+  align-items:end;
+  flex-wrap:wrap;
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--borde);
+  border-radius:10px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+}
+
+.card__header{
+  margin-bottom:10px;
+}
+
+.card__header--split{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.card__title{
+  margin:0;
+  font-size:14px;
+  color:var(--azul);
+}
+
+.grid{
+  display:grid;
+  gap:10px;
+}
+
+.grid--4{
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field--span2{ grid-column: span 2; }
+.field--inline{ justify-content:end; }
+
+.label{
+  font-size:12px;
+  font-weight:600;
+  color:#1b2b3a;
+}
+
+.hint{
+  color:var(--muted);
+  font-size:12px;
+  display:block;
+  margin-top:8px;
+}
+
+.input{
+  width:100%;
+  border:1px solid var(--borde);
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:13px;
+  background:#fff;
+  outline:none;
+}
+
+.input:focus{
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px rgba(31,78,121,.12);
+}
+
+.input--sm{
+  padding:7px 10px;
+  font-size:13px;
+  min-width:200px;
+}
+
+.textarea{
+  min-height:80px;
+}
+
+.check{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  user-select:none;
+}
+
+.btn{
+  background:var(--azul);
+  color:#fff;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:13px;
+}
+
+.btn:hover{ background:var(--azul-2); }
+
+.btn--secondary{
+  background:#fff;
+  color:var(--azul);
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow: inset 0 0 0 1px rgba(31,78,121,.35);
+}
+
+.btn--secondary:hover{
+  background:#f7fafc;
+}
+
+.inline-tools{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.table-wrap{
+  width:100%;
+  overflow:auto;
+  border:1px solid var(--borde);
+  border-radius:10px;
+}
+
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  min-width:900px;
+  background:#fff;
+}
+
+.table thead th{
+  position:sticky;
+  top:0;
+  background:var(--azul);
+  color:#fff;
+  text-align:left;
+  padding:10px;
+  font-size:12px;
+}
+
+.table tbody td{
+  border-top:1px solid var(--borde);
+  padding:8px 10px;
+  vertical-align:top;
+}
+
+.table tbody tr:hover{
+  background:#f7fafc;
+}
+
+.spacer{ height:12px; }
+
+@media (max-width: 980px){
+  .grid--4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field--span2{ grid-column: span 2; }
+  .input--sm{ min-width:160px; }
+  .table{ min-width:760px; }
+}
+
+@media print{
+  .topbar, .btn, .btn--secondary { display:none !important; }
+  body{ background:#fff; }
+  .card{ box-shadow:none; border:1px solid #000; }
+  .table-wrap{ overflow:visible; }
+}
+.bloque-firmas-print {
+  display: none;
+}
+
+@media print {
+
+  .bloque-firmas-print {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 60px;
+  }
+
+  .bloque-firmas-print .firma {
+    width: 45%;
+    text-align: center;
+  }
+
+  .bloque-firmas-print .rol {
+    font-weight: bold;
+    margin-bottom: 60px;
+  }
+
+}
+

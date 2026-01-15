@@ -61,9 +61,26 @@ function toggleCalificacionEvento(){
 // =============================
 // Backend calls
 // =============================
+
+// 🔴 LP SE BUSCA DIRECTO EN TU PHP (NO Apps Script)
 function apiBuscarLP(lp){
-  const url = `${BACKEND_URL}?accion=buscarLP&token=${encodeURIComponent(APP_TOKEN)}&lp=${encodeURIComponent(lp)}`;
-  return fetch(url).then(r => r.json());
+  const url = `https://sofw.link/buscar_personal.php?token=M@rio&legajo=${encodeURIComponent(lp)}`;
+  return fetch(url)
+    .then(r => r.json())
+    .then(arr => {
+      if (!Array.isArray(arr) || arr.length === 0) {
+        return { ok: false };
+      }
+      const r0 = arr[0];
+      return {
+        ok: true,
+        lp: r0.Legajo,
+        grado: r0.Grado,
+        apellido: r0.Apellido,
+        nombre: r0.Nombres,
+        dni: r0.DNI
+      };
+    });
 }
 
 function apiBuscarExpediente(nroEx){
@@ -114,7 +131,6 @@ function agregarImputado(){
   const tdAcc = document.createElement("td");
   tdAcc.appendChild(crearBtnEliminar("tabla_imputados"));
 
-  // Guardamos “metadatos” del efectivo para el guardado final
   tr.dataset.lp = lp;
 
   tr.append(tdN, tdLP, tdDatos, tdDestino, tdSituacion, tdAcc);
@@ -123,23 +139,19 @@ function agregarImputado(){
   apiBuscarLP(lp)
     .then(data => {
       if(data && data.ok){
-        // Guardar datos en dataset para guardar después en Sheets
         tr.dataset.grado = data.grado || "";
         tr.dataset.apellido = data.apellido || "";
         tr.dataset.nombre = data.nombre || "";
         tr.dataset.dni = data.dni || "";
 
-        tdDatos.textContent = `${data.grado} LP ${data.lp} (DNI ${data.dni}) ${data.apellido} ${data.nombre}`;
+        tdDatos.textContent =
+          `${data.grado} LP ${data.lp} (DNI ${data.dni}) ${data.apellido} ${data.nombre}`;
       } else {
         tdDatos.textContent = "LP no encontrado";
-        tr.dataset.grado = "";
-        tr.dataset.apellido = "";
-        tr.dataset.nombre = "";
-        tr.dataset.dni = "";
       }
     })
     .catch(() => {
-      tdDatos.textContent = "Error al buscar LP";
+      tdDatos.textContent = "Error al consultar la base";
     });
 
   qs("#lp_input").value = "";
@@ -176,266 +188,6 @@ function agregarDamnificado(){
 }
 
 // =============================
-// Diligencias / Procuración
-// =============================
-function agregarDiligenciaConValores(d = {}){
-  const tbody = qs("#tabla_diligencias tbody");
-  const tr = document.createElement("tr");
-
-  tr.innerHTML = `
-    <td>${tbody.rows.length + 1}</td>
-    <td><input class="input" type="text" placeholder="Diligencia" value="${escapeAttr(d.diligencia || "")}"></td>
-    <td><input class="input" type="text" placeholder="Tipo" value="${escapeAttr(d.tipo || "")}"></td>
-    <td><input class="input" type="date" value="${escapeAttr(d.fecha_solicitud || "")}"></td>
-    <td><input class="input" type="date" value="${escapeAttr(d.fecha_respuesta || "")}"></td>
-    <td><input class="input" type="text" placeholder="Observación" value="${escapeAttr(d.observacion || "")}"></td>
-    <td></td>
-  `;
-
-  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_diligencias"));
-  tbody.appendChild(tr);
-}
-
-function agregarDiligencia(){
-  agregarDiligenciaConValores({});
-}
-
-function agregarProcuracionConValores(p = {}){
-  const tbody = qs("#tabla_procuracion tbody");
-  const tr = document.createElement("tr");
-
-  tr.innerHTML = `
-    <td>${tbody.rows.length + 1}</td>
-    <td><input class="input" type="text" placeholder="Procuración" value="${escapeAttr(p.procuracion || "")}"></td>
-    <td><input class="input" type="date" value="${escapeAttr(p.fecha_solicitud || "")}"></td>
-    <td><input class="input" type="text" placeholder="Rta Positiva - Negativa" value="${escapeAttr(p.respuesta || "")}"></td>
-    <td><input class="input" type="date" value="${escapeAttr(p.fecha_respuesta || "")}"></td>
-    <td><input class="input" type="text" placeholder="Observación" value="${escapeAttr(p.observacion || "")}"></td>
-    <td></td>
-  `;
-
-  tr.lastElementChild.appendChild(crearBtnEliminar("tabla_procuracion"));
-  tbody.appendChild(tr);
-}
-
-function agregarProcuracion(){
-  agregarProcuracionConValores({});
-}
-
-// =============================
-// Construcción de payload
-// =============================
-function buildPayload(){
-  const nro_ex = qs("#nro_ex").value.trim();
-
-  const actuacion = {
-    nro_ex,
-    tipo_actuacion: qs("#tipo_actuacion").value || "",
-    nro_actuacion: qs("#nro_actuacion").value || "",
-    articulacion: qs("#articulacion").value || "",
-    tematica: qs("#tematica").value || "",
-
-    resolucion: qs("#resolucion") ? (qs("#resolucion").value || "") : "",
-    fecha_resolucion: qs("#fecha_resolucion") ? (qs("#fecha_resolucion").value || "") : "",
-    nro_ex_interno: qs("#nro_ex_interno") ? (qs("#nro_ex_interno").value || "") : "",
-
-    fecha_hecho: qs("#fecha_hecho").value || "",
-    circunstancia: qs("#circunstancia").value || "",
-    resena: qs("#resena").value || "",
-
-    actuacion_judicial: !!qs("#act_judicial").checked,
-    fecha_actuacion_judicial: qs("#fecha_act_judicial").value || "",
-
-    calificacion_evento: !!qs("#calificacion_evento").checked,
-    fecha_evento: qs("#fecha_evento").value || "",
-    nro_ex_evento: qs("#nro_ex_evento").value || ""
-  };
-
-  const imputados = qsa("#tabla_imputados tbody tr").map(tr => {
-    const destino = tr.querySelector('td:nth-child(4) input')?.value || "";
-    const situacion = tr.querySelector('td:nth-child(5) input')?.value || "";
-
-    return {
-      lp: tr.dataset.lp || tr.children[1]?.textContent?.trim() || "",
-      grado: tr.dataset.grado || "",
-      apellido: tr.dataset.apellido || "",
-      nombre: tr.dataset.nombre || "",
-      dni: tr.dataset.dni || "",
-      destino,
-      situacion_revista: situacion
-    };
-  });
-
-  const damnificados = qsa("#tabla_damnificados tbody tr").map(tr => {
-    const inputs = tr.querySelectorAll("input");
-    return {
-      datos: inputs[0]?.value || "",
-      relacion: inputs[1]?.value || "",
-      dni: inputs[2]?.value || ""
-    };
-  });
-
-  const diligencias = qsa("#tabla_diligencias tbody tr").map(tr => {
-    const inputs = tr.querySelectorAll("input");
-    return {
-      diligencia: inputs[0]?.value || "",
-      tipo: inputs[1]?.value || "",
-      fecha_solicitud: inputs[2]?.value || "",
-      fecha_respuesta: inputs[3]?.value || "",
-      observacion: inputs[4]?.value || ""
-    };
-  });
-
-  const procuracion = qsa("#tabla_procuracion tbody tr").map(tr => {
-    const inputs = tr.querySelectorAll("input");
-    return {
-      procuracion: inputs[0]?.value || "",
-      fecha_solicitud: inputs[1]?.value || "",
-      respuesta: inputs[2]?.value || "",
-      fecha_respuesta: inputs[3]?.value || "",
-      observacion: inputs[4]?.value || ""
-    };
-  });
-
-  return { actuacion, imputados, damnificados, diligencias, procuracion };
-}
-
-// =============================
-// Cargar payload en pantalla
-// =============================
-function clearTbody(sel){
-  const tbody = qs(sel);
-  if (tbody) tbody.innerHTML = "";
-}
-
-function setActuacionFields(act){
-  qs("#nro_ex").value = act.nro_ex || "";
-  qs("#tipo_actuacion").value = act.tipo_actuacion || "";
-  qs("#nro_actuacion").value = act.nro_actuacion || "";
-  qs("#articulacion").value = act.articulacion || "";
-  qs("#tematica").value = act.tematica || "";
-
-  if (qs("#resolucion")) qs("#resolucion").value = act.resolucion || "";
-  if (qs("#fecha_resolucion")) qs("#fecha_resolucion").value = act.fecha_resolucion || "";
-  if (qs("#nro_ex_interno")) qs("#nro_ex_interno").value = act.nro_ex_interno || "";
-
-  qs("#fecha_hecho").value = act.fecha_hecho || "";
-  qs("#circunstancia").value = act.circunstancia || "";
-  qs("#resena").value = act.resena || "";
-
-  qs("#act_judicial").checked = !!act.actuacion_judicial;
-  qs("#fecha_act_judicial").value = act.fecha_actuacion_judicial || "";
-
-  qs("#calificacion_evento").checked = !!act.calificacion_evento;
-  qs("#fecha_evento").value = act.fecha_evento || "";
-  qs("#nro_ex_evento").value = act.nro_ex_evento || "";
-
-  toggleBloqueResolucion();
-  toggleActJudicial();
-  toggleCalificacionEvento();
-}
-
-function addImputadoRowFromData(r){
-  const tbody = qs("#tabla_imputados tbody");
-  const tr = document.createElement("tr");
-
-  const tdN = document.createElement("td");
-  tdN.textContent = String(tbody.rows.length + 1);
-
-  const tdLP = document.createElement("td");
-  tdLP.textContent = r.lp || "";
-
-  const tdDatos = document.createElement("td");
-  tdDatos.textContent = `${r.grado || ""} LP ${r.lp || ""} (DNI ${r.dni || ""}) ${r.apellido || ""} ${r.nombre || ""}`.trim();
-
-  const tdDestino = document.createElement("td");
-  tdDestino.innerHTML = `<input class="input" type="text" placeholder="Destino" value="${escapeAttr(r.destino || "")}">`;
-
-  const tdSituacion = document.createElement("td");
-  tdSituacion.innerHTML = `<input class="input" type="text" placeholder="Situación de revista" value="${escapeAttr(r.situacion_revista || "")}">`;
-
-  const tdAcc = document.createElement("td");
-  tdAcc.appendChild(crearBtnEliminar("tabla_imputados"));
-
-  tr.dataset.lp = r.lp || "";
-  tr.dataset.grado = r.grado || "";
-  tr.dataset.apellido = r.apellido || "";
-  tr.dataset.nombre = r.nombre || "";
-  tr.dataset.dni = r.dni || "";
-
-  tr.append(tdN, tdLP, tdDatos, tdDestino, tdSituacion, tdAcc);
-  tbody.appendChild(tr);
-}
-
-function loadPayload(payload){
-  setActuacionFields(payload.actuacion || {});
-
-  // imputados
-  clearTbody("#tabla_imputados tbody");
-  (payload.imputados || []).forEach(addImputadoRowFromData);
-
-  // damnificados
-  clearTbody("#tabla_damnificados tbody");
-  (payload.damnificados || []).forEach(agregarDamnificadoConValores);
-
-  // diligencias
-  clearTbody("#tabla_diligencias tbody");
-  (payload.diligencias || []).forEach(agregarDiligenciaConValores);
-
-  // procuracion
-  clearTbody("#tabla_procuracion tbody");
-  (payload.procuracion || []).forEach(agregarProcuracionConValores);
-}
-
-// =============================
-// Botones
-// =============================
-async function onGuardar(){
-  const nroEx = qs("#nro_ex").value.trim();
-  if(!nroEx){
-    alert("Debe ingresar N° EX.");
-    return;
-  }
-
-  const payload = buildPayload();
-
-  try{
-    const resp = await apiGuardarExpediente(payload);
-    if(resp && resp.ok){
-      alert("Guardado OK: " + nroEx);
-    } else {
-      alert("Error al guardar: " + (resp?.error || "desconocido"));
-    }
-  } catch(e){
-    alert("Error de conexión al guardar.");
-  }
-}
-
-async function onBuscar(){
-  const nroEx = qs("#nro_ex").value.trim();
-  if(!nroEx){
-    alert("Ingrese N° EX para buscar.");
-    return;
-  }
-
-  try{
-    const resp = await apiBuscarExpediente(nroEx);
-    if(resp && resp.ok){
-      loadPayload(resp.payload);
-      alert("Expediente cargado: " + nroEx);
-    } else {
-      alert("No encontrado: " + (resp?.error || ""));
-    }
-  } catch(e){
-    alert("Error de conexión al buscar.");
-  }
-}
-
-function onImprimir(){
-  window.print();
-}
-
-// =============================
 // Utils
 // =============================
 function escapeAttr(str){
@@ -460,8 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   qs("#btnAgregarImputado").addEventListener("click", agregarImputado);
   qs("#btnAgregarDamnificado").addEventListener("click", agregarDamnificado);
-  qs("#btnAgregarDiligencia").addEventListener("click", agregarDiligencia);
-  qs("#btnAgregarProcuracion").addEventListener("click", agregarProcuracion);
 
   qs("#btnGuardar").addEventListener("click", onGuardar);
   qs("#btnBuscar").addEventListener("click", onBuscar);
